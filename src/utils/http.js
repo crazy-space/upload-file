@@ -2,13 +2,12 @@
  * @Author: Youzege
  * @Date: 2022-10-07 18:52:12
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-07 21:52:34
+ * @LastEditTime: 2022-10-08 16:01:39
  */
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://localhost:4001',
-  timeout: 1000
+  baseURL: 'http://localhost:4001'
 })
 
 service.interceptors.request.use((req) => {

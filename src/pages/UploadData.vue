@@ -2,7 +2,7 @@
  * @Author: Youzege
  * @Date: 2022-10-06 23:10:34
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-08 00:33:09
+ * @LastEditTime: 2022-10-08 20:20:55
 -->
 <template>
   <n-layout>
@@ -22,23 +22,17 @@
           <p>点击上传或者将文件拖拽到这</p>
         </div>
       </Upload>
-      <!-- 文件列表 - 文件进度 -->
-      <n-scrollbar style="max-height: 80px; margin:10px 0">
+      <!-- 文件列表 -->
+      <n-scrollbar style="max-height: 100px; margin:10px 0">
         <div class="file-container">
+          <n-gradient-text type="info" :size="16">
+            待传列表
+          </n-gradient-text>
           <div class="file-list" v-for="file in fileList" :key="file.name">
             <!-- 列表 item -->
             <div class="file-list__item">
               {{ file.name }}
             </div>
-            <!-- 进度 -->
-            <n-progress
-              class="file-list__progress"
-              type="line"
-              color="#70c0e8"
-              :percentage="0"
-              :indicator-placement="'inside'"
-              processing
-            />
             <!-- delete -->
             <n-button
               quaternary
@@ -57,16 +51,51 @@
         </div>
       </n-scrollbar>
       <div class="btn-group">
-        <n-button strong secondary type="info" @click="uploadFile">
-          开始上传
-        </n-button>
-        <n-button strong secondary type="warning" @click="uploadPause">
-          中断上传
-        </n-button>
-        <n-button strong secondary type="Primary" @click="uploadResume">
-          断点续传
-        </n-button>
+        <n-button-group size="small">
+          <n-button type="info" tertiary round @click="uploadFile">
+            <template #icon>
+              <n-icon><FileUpload /></n-icon>
+            </template>
+            开始上传
+          </n-button>
+          <n-button type="Warning" tertiary @click="uploadPause">
+            <template #icon>
+              <n-icon><PauseUpload /></n-icon>
+            </template>
+            中断上传
+          </n-button>
+          <n-button type="Primary" tertiary round @click="uploadResume">
+            <template #icon>
+              <n-icon><ResumeUpload /></n-icon>
+            </template>
+            断点续传
+          </n-button>
+        </n-button-group>
       </div>
+      <n-scrollbar style="max-height: 100px; margin:10px 0" v-if="false">
+        <div class="file-container">
+          <n-gradient-text type="info" :size="14">
+            上传列表
+          </n-gradient-text>
+          <div class="file-list" v-for="file in fileList" :key="file.name">
+            <!-- 列表 item -->
+            <div class="file-list__item">
+              {{ file.name }}
+            </div>
+            <!-- delete -->
+            <n-button
+              quaternary
+              circle
+              color="#70c0e8"
+              @click="deleteFiles(file)"
+            >
+              <template #icon>
+                <n-icon><delete /></n-icon>
+              </template>
+            </n-button>
+          </div>
+        </div>
+      </n-scrollbar>
     </n-layout-content>
   </n-layout>
 </template>
@@ -95,16 +124,19 @@ import {
   NIcon,
   NProgress,
   NScrollbar,
-  useMessage 
+  useMessage,
+  NButtonGroup
 } from 'naive-ui'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Upload from '../components/Upload/Upload.vue'
 import { Icon } from '@vicons/utils'
 import {
   CloudUploadOutlined as Clound,
-  DeleteForeverOutlined as Delete
+  DeleteForeverOutlined as Delete,
+  FileUploadOutlined as FileUpload,
+  MotionPhotosPauseOutlined as PauseUpload,
+  RestartAltFilled as ResumeUpload
 } from '@vicons/material'
-import SparkMD5 from 'spark-md5'
 import { calcHashByWebWorker } from '../utils/calculateFileHash'
 import request from '../utils/http'
 import axios from 'axios'
@@ -119,12 +151,13 @@ const fileList = ref([])
 // 当前状态
 const status = ref(STATUS.wait)
 // 文件Hash
-const fileHash = ref('')
+const fileHash = ref([])
 
 // 文件切片清单
 const chunksMap = ref([])
-// 请求列表
-const requestList = ref([])
+
+// 请求完成列表 
+const doneList = ref([])
 
 /**
  * 获取文件 Upload 回调
@@ -148,7 +181,7 @@ const getFiles = value => {
  * 中断请求
  */
 const CancelToken = axios.CancelToken
-const source = CancelToken.source()
+let source = CancelToken.source()
 
 /**
  * 1. 上传事件
@@ -157,38 +190,37 @@ const uploadFile = async () => {
   if (fileList.value.length === 0) {
     return
   }
-  const file = fileList.value[0]
-  const filename = file.name
-  // 获得分片
-  const chunks = createFileChunk(file)
-  // 计算文件hash
-  const { hashValue } = await calcHashByWebWorker(file, chunkSize)
-  fileHash.value = hashValue
+  fileList.value.forEach(async (file, index) => {
+    const filename = file.name
+    // 获得分片
+    const chunks = createFileChunk(file)
+    // 计算文件hash
+    const { hashValue } = await calcHashByWebWorker(chunks)
+    fileHash.value[index] = hashValue
 
-  // 文件是否存在?
-  const { uploaded, uploadedList } = await hasFile(filename, hashValue)
-  // 判断文件是否存在,如果不存在，获取已经上传的切片
-  if (uploaded) {
-    status.value = STATUS.done
-    message.success(
-      '秒传: 上传成功'
-    )
-    return
-  }
-  // 组装上传文件清单
-  chunksMap.value = chunks.map((chunk, index) => {
-    const chunkName = hashValue + '-' + index
-    return {
-      fileHash: hashValue,
-      chunk: chunk.file,
-      index,
-      hash: chunkName,
-      progress: uploadedList.indexOf(chunkName) > -1 ? 100 : 0,
-      size: chunk.file.size
+    // 文件是否存在?
+    const { uploaded, uploadedList } = await verify(filename, hashValue)
+    // 判断文件是否存在,如果不存在，获取已经上传的切片
+    if (uploaded) {
+      status.value = STATUS.done
+      message.success('秒传: 上传成功')
+      return
     }
+    // 组装上传文件清单
+    chunksMap.value[index] = chunks.map((chunk, index) => {
+      const chunkName = hashValue + '-' + index
+      return {
+        fileHash: hashValue,
+        chunk: chunk.file,
+        index,
+        percent: 0,
+        hash: chunkName,
+        size: chunk.file.size
+      }
+    })
+    // 传入已经存在的切片清单
+    await uploadChunks(filename, chunksMap.value[index], uploadedList, index)
   })
-  // 传入已经存在的切片清单
-  await uploadChunks(filename, chunksMap.value, uploadedList)
 }
 
 /**
@@ -210,7 +242,7 @@ const createFileChunk = file => {
  * @param filename 文件名
  * @param hash 文件hash值
  */
-const hasFile = async (filename, hash) => {
+const verify = async (filename, hash) => {
   const data = await request({
     url: '/verify',
     method: 'post',
@@ -228,8 +260,8 @@ const hasFile = async (filename, hash) => {
  * @param chunkMap 文件切片清单
  * @param uploadedList 待传列表
  */
-const uploadChunks = async (filename, chunkMap, uploadedList) => {
-  // 1. 获取待传片段
+const uploadChunks = async (filename, chunkMap, uploadedList, currentIndex) => {
+  // 1. 过滤出待传片段
   const list = chunkMap
     .filter(chunk => uploadedList.indexOf(chunk.hash) == -1)
     .map(({ chunk, hash, index }, i) => {
@@ -237,31 +269,25 @@ const uploadChunks = async (filename, chunkMap, uploadedList) => {
       form.append('chunk', chunk)
       form.append('hash', hash)
       form.append('filename', filename)
-      form.append('fileHash', fileHash.value)
+      form.append('fileHash', fileHash.value[currentIndex])
       return { form, index, status: STATUS.wait }
     })
-
+    
   // 2. 请求 & 合并
   try {
     status.value = STATUS.uploading
-    const ret = await sendRequest(list, 4)
-    if (ret && uploadedList.length + list.length === chunksMap.value.length) {
-      // 上传列表 和 待传列表 = 总片段 发送合并请求
-      const chunksSize = new Array(chunksMap.value.length).fill(chunkSize)
+    const ret = await sendRequest(list, 4, 3, currentIndex)
+    if (ret && uploadedList.length + list.length === chunksMap.value[currentIndex].length) {
+      // 上传完成列表 和 待传片段列表 = 总片段数 发送合并请求
+      const chunksSize = new Array(chunksMap.value[currentIndex].length).fill(chunkSize)
       chunksSize[0] = 0
-      await mergeRequest(filename, chunksSize)
+      await mergeRequest(filename, chunksSize, currentIndex)
       status.value = STATUS.done
-      message.success(
-        '上传成功!'
-      )
+      message.success('上传成功!')
     }
   } catch (e) {
-    // alert('亲 上传失败了,考虑重试下呦');
     status.value = STATUS.error
-    console.log(e, '------错误文件')
-    message.error(
-      '上传失败!'
-    )
+    message.error('上传失败!')
   }
 }
 
@@ -271,7 +297,7 @@ const uploadChunks = async (filename, chunkMap, uploadedList) => {
  * @param max 并发数量
  * @retryTimes 重试次数
  */
-const sendRequest = async (list, max = 4, retryTimes = 3) => {
+const sendRequest = async (list, max = 4, retryTimes = 3, currentIndex) => {
   return new Promise((resolve, reject) => {
     const len = list.length
     let counter = 0
@@ -280,22 +306,23 @@ const sendRequest = async (list, max = 4, retryTimes = 3) => {
       if (counter === len && counter === 0) {
         resolve(true)
       }
-      // 有请求，有通道
+      // 上传请求, 控制请求数量
       while (counter < len && max > 0) {
-        max-- // 占用通道
-        // 等待或者error 需要重传
-        const i = list.findIndex(
+        // 占用通道
+        max--
+        // 状态: wait或者error 需要重新发送上传请求
+        const upIndex = list.findIndex(
           v => v.status == STATUS.wait || v.status == STATUS.error
         )
-        if (i == -1) {
+        if (upIndex == -1) {
           // 没有等待的请求，结束
           resolve(true)
           return
         }
-        list[i].status = STATUS.uploading
+        list[upIndex].status = STATUS.uploading
 
-        const form = list[i].form
-        const index = list[i].index
+        const form = list[upIndex].form
+        const index = list[upIndex].index
         if (typeof retryArr[index] == 'number') {
           console.log(index, `第${retryArr[index] + 1}次上传`)
         }
@@ -304,34 +331,36 @@ const sendRequest = async (list, max = 4, retryTimes = 3) => {
             url: '/upload',
             method: 'post',
             data: form,
-            onUploadProgress: createProgresshandler(chunksMap.value[index]),
+            currentIndex,
             source
           })
-          list[i].status = STATUS.done
+          list[upIndex].status = STATUS.done
           max++ // 释放通道
           counter++
           if (counter === len) {
             resolve(true)
           } else {
+            console.log(allPercent.value)
             start()
           }
         } catch (e) {
-          // 初始值
-          list[i].status = STATUS.error
+          // 报错后--重试上传
+          list[upIndex].status = STATUS.error
           if (typeof retryArr[index] !== 'number') {
             retryArr[index] = 0
           }
-          // 次数累加
+          // 重试次数累加
           retryArr[index]++
-          // 一个请求报错3次的
+          // 重复次数过多 终止上传
           if (retryArr[index] > retryTimes) {
-            return reject() // 考虑abort所有别的
+            return reject()
           }
           console.log(index, retryArr[index], e, '次报错')
-          // 3次报错以内的 重启
-          chunksMap.value[index].progress = -1 // 报错的进度条
-          max++ // 释放当前占用的通道，但是counter不累加
 
+          // 释放当前占用的通道，但是counter不累加
+          max++
+
+          // 重试次数内, 重新发送请求
           start()
         }
       }
@@ -345,61 +374,79 @@ const sendRequest = async (list, max = 4, retryTimes = 3) => {
  * 单独封装 分片请求
  *
  */
-const chunkUpload = async ({ url, method, data, onUploadProgress, source }) => {
+const chunkUpload = async ({ url, method, data, currentIndex, source }) => {
   const res = await request({
     url,
     method,
     data,
+    onUploadProgress: createProgress(
+      chunksMap.value[currentIndex]
+    ), // 传入监听上传进度回调
     cancelToken: source.token
   })
   return res
 }
 
 /**
- * 6.创建上传进度
- * @param item
+ * 进度
  */
-const createProgresshandler = item => {
-  return e => {
-    item.progress = parseInt(String((e.loaded / e.total) * 100))
+const createProgress = (item) => {
+  return (e) => {
+    item.percent = parseInt(String((e.loaded / e.total) * 100))
   }
 }
 
+const allPercent = computed(() => {
+  const chunksMapA = chunksMap.value
+  const loaded = chunksMapA
+    .map(list => list)
+    .map(({ size, percent }) => {
+      console.log('size * percent', size , percent)
+      return size * percent
+    })
+    .reduce((pre, next) => pre + next);
+  console.log('loaded', loaded)
+  return loaded
+})
+
 /**
- * 7.发送合并请求
+ * 6.发送合并请求
  */
-const mergeRequest = async (filename, size) => {
+const mergeRequest = async (filename, size, currentIndex) => {
   await request({
     url: '/merge',
     method: 'post',
     data: {
       filename,
       size,
-      fileHash: fileHash.value
+      fileHash: fileHash.value[currentIndex]
     }
   })
 }
 
 /**
- * 8. 中断请求
+ * 7. 中断请求
  */
 const uploadPause = () => {
   status.value = STATUS.pause
-  source.cancel(' Pause ')
+  source.cancel()
+  source = CancelToken.source()
 }
 
 /**
- * 9. 断点续传
+ * 8. 断点续传
  */
 const uploadResume = async () => {
   status.value = STATUS.uploading
-  const filename = fileList.value[0].name
-  const { uploadedList } = await hasFile(filename, fileHash.value)
-  // 上传切片
-  await uploadChunks(filename, chunksMap.value, uploadedList)
+  fileList.value.forEach(async (file, index) => {
+    const filename = file.name
+    const { uploadedList } = await verify(filename, fileHash.value[index])
+    // 上传切片
+    await uploadChunks(filename, chunksMap.value, uploadedList, index)
+  })
 }
 
-const deleteFiles = (file) => {
+const deleteFiles = file => {
   fileList.value = fileList.value.filter(item => item.name !== file.name)
 }
 </script>
@@ -417,7 +464,6 @@ const deleteFiles = (file) => {
   flex-direction: column;
   padding: 0.5rem;
   width: 20rem;
-  // height: 10rem;
   transition: all 0.1s;
 }
 
@@ -430,18 +476,16 @@ const deleteFiles = (file) => {
   height: 1.2rem;
 
   &__item {
-    width: 8rem;
+    // width: 8rem;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
-  }
-  &__progress {
-    width: 8rem;
   }
 }
 
 .btn-group {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .n-layout {
@@ -463,6 +507,6 @@ const deleteFiles = (file) => {
 }
 
 .n-gradient-text {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
 }
 </style>

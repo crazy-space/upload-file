@@ -2,21 +2,30 @@
  * @Author: Youzege
  * @Date: 2022-10-07 17:36:51
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-08 00:13:01
+ * @LastEditTime: 2022-10-08 18:08:45
  */
 self.importScripts('./spark-md5.js')
 
 /**
  * webworker 防止卡住主线程
+ * 监听 worker 信息
  * @param {*} event 
  */
 self.onmessage = (event) => {
   const fileChunkList = event.data.chunks
   const spark = new (self).SparkMD5.ArrayBuffer()
+  // 计算进度 
   let percentage = 0
+  // 分片计算数
   let count = 0
 
+  // 将分片逐个计算
   const loadNext = (index) => {
+    /**
+     * 文件读取
+     *  - 读取一个文件 blob & file
+     *  - 读取完成 返回 result 包含了 读取的文件数据
+     */
     const reader = new FileReader()
     reader.readAsArrayBuffer(fileChunkList[index].file)
     reader.onload = (e) => {
@@ -24,7 +33,6 @@ self.onmessage = (event) => {
       spark.append(e.target?.result)
       if(count === fileChunkList.length) {
         self.postMessage({
-          progress: 100,
           hash: spark.end()
         })
         self.close()

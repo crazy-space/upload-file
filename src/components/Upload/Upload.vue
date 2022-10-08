@@ -2,11 +2,11 @@
  * @Author: Youzege
  * @Date: 2022-10-06 20:42:54
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-07 12:11:18
+ * @LastEditTime: 2022-10-08 17:05:10
 -->
 <template>
   <div class="upload-container" @click="handleUpload">
-    <!-- 非拖拽 -->
+    <!-- 选择获取 -->
     <div class="upload-select" v-if="type === 'select'">
       <slot></slot>
     </div>
@@ -41,10 +41,6 @@ const props = defineProps({
   multiple: {
     type: Boolean,
     default: false
-  },
-  name: {
-    type: String,
-    default: 'file'
   },
   accept: {
     type: String,

@@ -23,7 +23,7 @@ export default class Controller {
   async mergeFileChunk(filePath: string, fileHash: string, size: number[]) {
     // cpmspe/pg)
     const chunkDir = path.resolve(this.UPLOAD_DIR, fileHash)
-    await sleep(10)
+    await sleep(1)
     let chunkPaths = await fse.readdir(chunkDir)
     // 根据切片下标进行排序
     // 否则直接读取目录的获得的顺序可能会错乱
