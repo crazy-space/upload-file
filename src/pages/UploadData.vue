@@ -2,7 +2,7 @@
  * @Author: Youzege
  * @Date: 2022-10-06 23:10:34
  * @LastEditors: luoyz
- * @LastEditTime: 2022-10-09 15:28:56
+ * @LastEditTime: 2022-10-09 17:03:21
 -->
 <template>
   <n-layout>
@@ -249,7 +249,6 @@ const verify = async (filename, hash) => {
 /**
  * 4. 文件切片
  * @param filename 文件名
- * @param chunkMap 文件切片清单
  * @param uploadedList 待传列表
  */
 const uploadChunks = async (filename, uploadedList) => {
@@ -443,11 +442,11 @@ const uploadPause = () => {
  */
 const uploadResume = async () => {
   status.value = STATUS.uploading
-  fileList.value.forEach(async (file, index) => {
-    const filename = file.name
-    const { uploadedList } = await verify(filename, fileHash.value[index])
+  filesMap.value.forEach(async file => {
+    const filename = file.filename
+    const { uploadedList } = await verify(filename, file.fileHash)
     // 上传切片
-    await uploadChunks(filename, uploadedList, index)
+    await uploadChunks(filename, uploadedList)
   })
 }
 
