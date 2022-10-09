@@ -1,0 +1,232 @@
+{
+  "SYSNAME": "济南市国土空间基础信息平台",
+  "SSJD_SYSNAME": "济南市国土空间规划“一张图”</br>实施监督信息系统",
+  "JCXP_SYSNAME": "济南市国土空间基础信息平台",
+  "TARGET": "SSJD",
+  "VERSION": "3.2.27 (2019-09-20 17:29)",
+  "NETWORK": "extranet",
+  "USEPERMISSION": true,
+  "NOTE": "NETWORK可选值：intranet(内网) or extranet(外网)",
+  "development": {
+    "API": "http://192.168.1.226:18088",
+    "API_FILE_DIR": "/dgp-server-web-nr/",
+    "FZSC_API": "/dgp-ars-server-web/",
+    "TLH_API": "http://192.168.1.226:18088/dgp-server-web-nr/",
+    "DATAEYE": "http://192.168.1.226:18088/dataeye/#/",
+    "ONEMAP": "http://52.83.142.190:8085/zjbyzt/index.html?component=no",
+    "_ONEMAP": "http://10.80.2.203:8000/portal#/gtb",
+    "INDEXSYSTEM": "http://192.168.1.226:18088/IndexSystem/#/",
+    "OESYSTEM": "http://192.168.1.226:18088/dgpoms",
+    "MODELSYSTEM": "http://192.168.1.226:18088/dme/#/",
+    "TZONEMAP": "http://52.83.142.190:8088/CityOneMap/",
+    "ARCGISURL": "http://192.168.1.226:18088/dgp_js_api49",
+    "MAP_SERVER_PROXY": "",
+    "SPATIAL_API": "http://192.168.1.223:8889/api/",
+    "SPATIAL_WEBSOCKET": "ws://192.168.1.195:4669/Notice",
+    "CROSSDOMAINS": [
+      "http://192.168.200.58:5566/oms.html"
+    ],
+    "DME_API": "http://192.168.1.223:7621/dme/",
+    "DAGL_API": "/storage-service/",
+    "SYSTEMTYPE": "SSJD",
+    "PLATFORM_LOGIN": true,
+    "PLATFORM_ADDRESS": "http://localhost:9096/",
+    "FKWEBSOCKET": "http://192.168.1.226:18088/storage-service//websocket",
+    "TOPICANALYSIS_API": "http://10.11.6.251:18088/table-standalone-1.0.0-SNAPSHOT/",
+    "PORTAL_CONFIG": {
+      "modules": [
+        {
+          "name": "一张图应用",
+          "icon": "yizhangtu1",
+          "weight": 1,
+          "description": "提供包括资源浏览、专题图制作、对比分析、查询统计等功能，让数据可见、可查、可用。"
+        },
+        {
+          "name": "规划分析评价",
+          "icon": "guihuafenxipingjia",
+          "weight": 1,
+          "description": "利用模型进行分析评价，支撑双评价和国土空间规划实施评估和风险识别评估。"
+        },
+        {
+          "name": "规划审查与管理",
+          "icon": "shenchayuguanli",
+          "weight": 1,
+          "description": "提供规划成果辅助审查和规划成果管理等功能，对审查各阶段的规划编制成果进行管理和利用。"
+        },
+        {
+          "name": "监测评估预警",
+          "icon": "jiancepingguyujing",
+          "weight": 1,
+          "description": "支撑重要控制线和重点区域的监测预警，实现动态监测、评估和及时预警的功能，辅助管理者决策。"
+        },
+        {
+          "name": "资源环境承载力",
+          "icon": "ziyuanhuanjingchengzaili",
+          "weight": 1,
+          "description": "提供对资源环境承载能力的综合监管、动态评估和决策支持，推动监测预警规范化、常态化、制度化。"
+        },
+        {
+          "name": "指标模型管理",
+          "icon": "zhibiaomoxing",
+          "weight": 1,
+          "description": "支撑对项目的合规性审查及报告输出。"
+        }
+      ],
+      "DGLTURL": "http://192.168.1.95:8034/dgpt/",
+      "YUNSERVICEURL": "http://192.168.1.196:8090/cms/",
+      "DATAUPDATEURL": "sjgx://"
+    },
+    "THEME": "light",
+    "SDST_RESULTREPORT_URL": "http://10.10.28.239:18080/dgp-server-web-nr"
+  },
+  "JCXP": {
+    "API": "http://192.168.1.196:8090",
+    "API_FILE_DIR": "/dgp-server-web-nr/",
+    "FZSC_API": "/dgp-ars-server-web/",
+    "TLH_API": "http://192.168.1.196:8090/dgp-server-web-nr/",
+    "DATAEYE": "http://52.82.69.176:8088/dataeye/#/",
+    "ONEMAP": "http://52.83.142.190:8085/zjbyzt/index.html?component=no",
+    "_ONEMAP": "http://10.80.2.203:8000/portal#/gtb",
+    "INDEXSYSTEM": "http://192.168.1.196:8090/IndexSystem/#/",
+    "OESYSTEM": "http://192.168.1.196:8090/dgpoms",
+    "MODELSYSTEM": "http://192.168.1.196:8090/dme/#/",
+    "TZONEMAP": "http://52.83.142.190:8088/CityOneMap/",
+    "ARCGISURL": "http://192.168.1.196:8090/dgp_js_api49",
+    "MAP_SERVER_PROXY": "",
+    "SPATIAL_API": "http://192.168.1.196:8889/api/",
+    "SPATIAL_WEBSOCKET": "ws://192.168.1.196:4669/Notice",
+    "CROSSDOMAINS": [
+      "http://192.168.200.58:5566/oms.html"
+    ],
+    "DME_API": "http://192.168.1.223:7621/dme/",
+    "DAGL_API": "/storage-service/",
+    "SYSTEMTYPE": "JCPT",
+    "PLATFORM_LOGIN": true,
+    "PLATFORM_ADDRESS": "http://localhost:9096/",
+    "PORTAL_CONFIG": {
+      "modules": [
+        {
+          "name": "一张图",
+          "background": "#02A1EB"
+        },
+        {
+          "name": "云服务管理",
+          "background": "#F8B62D"
+        },
+        {
+          "name": "数据更新管理",
+          "background": "#02A1EB"
+        },
+        {
+          "name": "指标管理",
+          "background": "#F8B62D"
+        },
+        {
+          "name": "运维管理",
+          "background": "#02A1EB"
+        },
+        {
+          "name": "模型管理",
+          "background": "#F8B62D"
+        }
+      ],
+      "DGLTURL": "http://192.168.1.95:8034/dgpt/",
+      "YUNSERVICEURL": "http://192.168.200.58:8080/dist/",
+      "DATAUPDATEURL": "sjgx://"
+    },
+    "THEME": "light"
+  },
+  "SSJD": {
+    "API": "http://192.168.1.226:18088",
+    "API_FILE_DIR": "/dgp-server-web-nr/",
+    "FZSC_API": "/dgp-ars-server-web/",
+    "TLH_API": "http://192.168.1.226:18088/dgp-server-web-nr/",
+    "DATAEYE": "http://192.168.1.226:18088/dataeye/#/",
+    "ONEMAP": "http://52.83.142.190:8085/zjbyzt/index.html?component=no",
+    "_ONEMAP": "http://10.80.2.203:8000/portal#/gtb",
+    "INDEXSYSTEM": "http://192.168.1.226:18088/IndexSystem/#/",
+    "OESYSTEM": "http://192.168.1.226:18088/dgpoms",
+    "MODELSYSTEM": "http://192.168.1.226:18088/dme/#/",
+    "TZONEMAP": "http://52.83.142.190:8088/CityOneMap/",
+    "ARCGISURL": "http://192.168.1.226:18088/dgp_js_api49",
+    "MAP_SERVER_PROXY": "",
+    "SPATIAL_API": "http://192.168.1.223:8889/api/",
+    "SPATIAL_WEBSOCKET": "ws://192.168.1.223:4669/Notice",
+    "CROSSDOMAINS": [
+      "http://192.168.200.58:5566/oms.html"
+    ],
+    "DME_API": "http://192.168.1.223:7621/dme/",
+    "DAGL_API": "/storage-service/",
+    "SYSTEMTYPE": "SSJD",
+    "PLATFORM_LOGIN": true,
+    "PLATFORM_ADDRESS": "http://localhost:9096/",
+    "PORTAL_CONFIG": {
+      "modules": [
+        {
+          "name": "一张图应用",
+          "icon": "yizhangtu1",
+          "background": "#9C70D3",
+          "weight": 1
+        },
+        {
+          "name": "规划分析评价",
+          "icon": "guihuafenxipingjia",
+          "background": "#FF5492",
+          "weight": 1
+        },
+        {
+          "name": "成果审查管理",
+          "icon": "shenchayuguanli",
+          "background": "#3FBF60",
+          "weight": 1
+        },
+        {
+          "name": "监测评估预警",
+          "icon": "jiancepingguyujing",
+          "background": "#00A2F2",
+          "weight": 1
+        },
+        {
+          "name": "资源环境承载力",
+          "icon": "ziyuanhuanjingchengzaili",
+          "background": "#13c2c2",
+          "weight": 1
+        },
+        {
+          "name": "合规性分析",
+          "icon": "heguixingshencha",
+          "background": "#F8B62D",
+          "weight": 1
+        },
+        {
+          "name": "城市体检评估",
+          "icon": "shenchayuguanli",
+          "background": "#F8B62D",
+          "weight": 1
+        },
+        {
+          "name": "指标管理",
+          "icon": "zhibiaoguanli",
+          "background": "#8DCF54",
+          "weight": 2
+        },
+        {
+          "name": "模型管理",
+          "icon": "moxingguanli",
+          "background": "#13c2c2",
+          "weight": 2
+        },
+        {
+          "name": "运维管理",
+          "icon": "yunweiguanli",
+          "background": "#dcac03",
+          "weight": 2
+        }
+      ],
+      "DGLTURL": "http://192.168.1.95:8034/dgpt/",
+      "YUNSERVICEURL": "http://192.168.1.226:18088/cms/",
+      "DATAUPDATEURL": "sjgx://"
+    },
+    "THEME": "light"
+  }
+}

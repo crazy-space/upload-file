@@ -1,8 +1,8 @@
 <!--
  * @Author: Youzege
  * @Date: 2022-10-06 23:10:34
- * @LastEditors: Youzege
- * @LastEditTime: 2022-10-08 20:20:55
+ * @LastEditors: luoyz
+ * @LastEditTime: 2022-10-09 15:28:56
 -->
 <template>
   <n-layout>
@@ -28,24 +28,33 @@
           <n-gradient-text type="info" :size="16">
             待传列表
           </n-gradient-text>
-          <div class="file-list" v-for="file in fileList" :key="file.name">
+          <div class="file-list" v-for="[key, file] in filesMap" :key="key">
             <!-- 列表 item -->
             <div class="file-list__item">
-              {{ file.name }}
+              {{ key }}
             </div>
+            <!-- 进度 -->
+            <n-progress
+              class="file-list__progress"
+              type="line"
+              color="#70c0e8"
+              :percentage="file.fileProgess"
+              :indicator-placement="'inside'"
+              processing
+            />
             <!-- delete -->
             <n-button
               quaternary
               circle
               color="#70c0e8"
-              @click="deleteFiles(file)"
+              @click="deleteFiles(key)"
             >
               <template #icon>
                 <n-icon><delete /></n-icon>
               </template>
             </n-button>
           </div>
-          <n-gradient-text type="info" v-if="fileList.length === 0">
+          <n-gradient-text type="info" v-if="filesMap.size === 0">
             <span>似乎还没有文件</span>
           </n-gradient-text>
         </div>
@@ -72,30 +81,6 @@
           </n-button>
         </n-button-group>
       </div>
-      <n-scrollbar style="max-height: 100px; margin:10px 0" v-if="false">
-        <div class="file-container">
-          <n-gradient-text type="info" :size="14">
-            上传列表
-          </n-gradient-text>
-          <div class="file-list" v-for="file in fileList" :key="file.name">
-            <!-- 列表 item -->
-            <div class="file-list__item">
-              {{ file.name }}
-            </div>
-            <!-- delete -->
-            <n-button
-              quaternary
-              circle
-              color="#70c0e8"
-              @click="deleteFiles(file)"
-            >
-              <template #icon>
-                <n-icon><delete /></n-icon>
-              </template>
-            </n-button>
-          </div>
-        </div>
-      </n-scrollbar>
     </n-layout-content>
   </n-layout>
 </template>
@@ -127,7 +112,7 @@ import {
   useMessage,
   NButtonGroup
 } from 'naive-ui'
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 import Upload from '../components/Upload/Upload.vue'
 import { Icon } from '@vicons/utils'
 import {
@@ -146,34 +131,29 @@ const message = useMessage()
 // 分片Size
 const chunkSize = 2 * 1024 * 1024
 
-// 当前文件列表
-const fileList = ref([])
 // 当前状态
 const status = ref(STATUS.wait)
-// 文件Hash
-const fileHash = ref([])
 
 // 文件切片清单
-const chunksMap = ref([])
-
-// 请求完成列表 
-const doneList = ref([])
+const filesMap = ref(new Map())
 
 /**
  * 获取文件 Upload 回调
  */
 const getFiles = value => {
   let files = [...value]
-  if (fileList.value.length > 0) {
+  if (filesMap.value.size > 0) {
     let exsit
     files.forEach(file => {
-      exsit = fileList.value.find(item => item.name === file.name)
+      exsit = filesMap.value.has(file.name)
     })
     if (exsit) {
       return
     }
   }
-  fileList.value = fileList.value.concat(files)
+  files.forEach(file => {
+    filesMap.value.set(file.name, { file, fileProgess: [0] })
+  })
   status.value = STATUS.wait
 }
 
@@ -187,28 +167,30 @@ let source = CancelToken.source()
  * 1. 上传事件
  */
 const uploadFile = async () => {
-  if (fileList.value.length === 0) {
+  if (filesMap.value.size === 0) {
     return
   }
-  fileList.value.forEach(async (file, index) => {
+  filesMap.value.forEach(async ({ file }, index) => {
     const filename = file.name
     // 获得分片
     const chunks = createFileChunk(file)
     // 计算文件hash
     const { hashValue } = await calcHashByWebWorker(chunks)
-    fileHash.value[index] = hashValue
 
     // 文件是否存在?
     const { uploaded, uploadedList } = await verify(filename, hashValue)
     // 判断文件是否存在,如果不存在，获取已经上传的切片
     if (uploaded) {
+      filesMap.value.set(filename, { fileProgess: 100 })
       status.value = STATUS.done
-      message.success('秒传: 上传成功')
+      message.success(`文件:${filename} 秒传成功`)
       return
     }
     // 组装上传文件清单
-    chunksMap.value[index] = chunks.map((chunk, index) => {
+    const newChunks = chunks.map((chunk, index) => {
+      // 每一个分片
       const chunkName = hashValue + '-' + index
+
       return {
         fileHash: hashValue,
         chunk: chunk.file,
@@ -218,8 +200,18 @@ const uploadFile = async () => {
         size: chunk.file.size
       }
     })
+
+    filesMap.value.set(filename, {
+      file,
+      filename,
+      fileSize: file.size,
+      fileHash: hashValue,
+      fileChunkList: newChunks,
+      fileProgess: 0
+    })
+
     // 传入已经存在的切片清单
-    await uploadChunks(filename, chunksMap.value[index], uploadedList, index)
+    await uploadChunks(filename, uploadedList)
   })
 }
 
@@ -260,30 +252,41 @@ const verify = async (filename, hash) => {
  * @param chunkMap 文件切片清单
  * @param uploadedList 待传列表
  */
-const uploadChunks = async (filename, chunkMap, uploadedList, currentIndex) => {
+const uploadChunks = async (filename, uploadedList) => {
+  const uploadFile = filesMap.value.get(filename)
+
+  const fileHash = uploadFile.fileHash
+
   // 1. 过滤出待传片段
-  const list = chunkMap
+  const list = uploadFile.fileChunkList
     .filter(chunk => uploadedList.indexOf(chunk.hash) == -1)
-    .map(({ chunk, hash, index }, i) => {
+    .map((list, i) => {
       const form = new FormData()
-      form.append('chunk', chunk)
-      form.append('hash', hash)
+      form.append('chunk', list.chunk)
+      form.append('hash', list.hash)
       form.append('filename', filename)
-      form.append('fileHash', fileHash.value[currentIndex])
-      return { form, index, status: STATUS.wait }
+      form.append('fileHash', fileHash)
+      list.form = form
+      list.status = STATUS.wait
+      return list
     })
-    
+
   // 2. 请求 & 合并
   try {
     status.value = STATUS.uploading
-    const ret = await sendRequest(list, 4, 3, currentIndex)
-    if (ret && uploadedList.length + list.length === chunksMap.value[currentIndex].length) {
+    const ret = await sendRequest(list, 4, 3)
+    if (
+      ret &&
+      uploadedList.length + list.length === uploadFile.fileChunkList.length
+    ) {
       // 上传完成列表 和 待传片段列表 = 总片段数 发送合并请求
-      const chunksSize = new Array(chunksMap.value[currentIndex].length).fill(chunkSize)
+      const chunksSize = new Array(uploadFile.fileChunkList.length).fill(
+        chunkSize
+      )
       chunksSize[0] = 0
-      await mergeRequest(filename, chunksSize, currentIndex)
+      await mergeRequest(filename, chunksSize, fileHash)
       status.value = STATUS.done
-      message.success('上传成功!')
+      message.success(`文件:${filename} 上传成功`)
     }
   } catch (e) {
     status.value = STATUS.error
@@ -297,7 +300,7 @@ const uploadChunks = async (filename, chunkMap, uploadedList, currentIndex) => {
  * @param max 并发数量
  * @retryTimes 重试次数
  */
-const sendRequest = async (list, max = 4, retryTimes = 3, currentIndex) => {
+const sendRequest = async (list, max = 4, retryTimes = 3) => {
   return new Promise((resolve, reject) => {
     const len = list.length
     let counter = 0
@@ -331,7 +334,7 @@ const sendRequest = async (list, max = 4, retryTimes = 3, currentIndex) => {
             url: '/upload',
             method: 'post',
             data: form,
-            currentIndex,
+            percent: list[upIndex],
             source
           })
           list[upIndex].status = STATUS.done
@@ -340,7 +343,6 @@ const sendRequest = async (list, max = 4, retryTimes = 3, currentIndex) => {
           if (counter === len) {
             resolve(true)
           } else {
-            console.log(allPercent.value)
             start()
           }
         } catch (e) {
@@ -374,14 +376,12 @@ const sendRequest = async (list, max = 4, retryTimes = 3, currentIndex) => {
  * 单独封装 分片请求
  *
  */
-const chunkUpload = async ({ url, method, data, currentIndex, source }) => {
+const chunkUpload = async ({ url, method, data, percent, source }) => {
   const res = await request({
     url,
     method,
     data,
-    onUploadProgress: createProgress(
-      chunksMap.value[currentIndex]
-    ), // 传入监听上传进度回调
+    onUploadProgress: createProgress(percent), // 传入监听上传进度回调
     cancelToken: source.token
   })
   return res
@@ -390,36 +390,41 @@ const chunkUpload = async ({ url, method, data, currentIndex, source }) => {
 /**
  * 进度
  */
-const createProgress = (item) => {
-  return (e) => {
+const createProgress = item => {
+  return e => {
     item.percent = parseInt(String((e.loaded / e.total) * 100))
   }
 }
 
-const allPercent = computed(() => {
-  const chunksMapA = chunksMap.value
-  const loaded = chunksMapA
-    .map(list => list)
-    .map(({ size, percent }) => {
-      console.log('size * percent', size , percent)
-      return size * percent
+watch(
+  filesMap,
+  (filesMap, old) => {
+    filesMap.forEach(file => {
+      if (file.fileProgess !== 100) {
+        const loaded = file.fileChunkList
+          ?.map(({ size, percent }) => size * percent)
+          .reduce((pre, next) => pre + next)
+        file.fileProgess =
+          loaded !== undefined
+            ? parseInt((loaded / file.fileSize).toFixed(2))
+            : 0
+      }
     })
-    .reduce((pre, next) => pre + next);
-  console.log('loaded', loaded)
-  return loaded
-})
+  },
+  { deep: true }
+)
 
 /**
  * 6.发送合并请求
  */
-const mergeRequest = async (filename, size, currentIndex) => {
+const mergeRequest = async (filename, size, fileHash) => {
   await request({
     url: '/merge',
     method: 'post',
     data: {
       filename,
       size,
-      fileHash: fileHash.value[currentIndex]
+      fileHash
     }
   })
 }
@@ -442,12 +447,12 @@ const uploadResume = async () => {
     const filename = file.name
     const { uploadedList } = await verify(filename, fileHash.value[index])
     // 上传切片
-    await uploadChunks(filename, chunksMap.value, uploadedList, index)
+    await uploadChunks(filename, uploadedList, index)
   })
 }
 
-const deleteFiles = file => {
-  fileList.value = fileList.value.filter(item => item.name !== file.name)
+const deleteFiles = key => {
+  filesMap.value.delete(key)
 }
 </script>
 
@@ -476,10 +481,13 @@ const deleteFiles = file => {
   height: 1.2rem;
 
   &__item {
-    // width: 8rem;
+    width: 8rem;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+  &__progress {
+    width: 8rem;
   }
 }
 

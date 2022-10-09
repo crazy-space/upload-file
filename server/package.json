@@ -6,7 +6,8 @@
   "scripts": {
     "pack": "esbuild src/index.ts --bundle --minify --platform=node --outfile=result/index.js",
     "build": "pnpm run pack & node result/index.js",
-    "dev": "nodemon --watch src -e ts --exec pnpm run build"
+    "dev": "nodemon --watch src -e ts --exec pnpm run build",
+    "pm2": "pm2 start result/index.js"
   },
   "keywords": [],
   "author": "",

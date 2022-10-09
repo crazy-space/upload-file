@@ -1,8 +1,8 @@
 <!--
  * @Author: Youzege
  * @Date: 2022-10-06 20:39:53
- * @LastEditors: Youzege
- * @LastEditTime: 2022-10-07 23:07:01
+ * @LastEditors: luoyz
+ * @LastEditTime: 2022-10-09 10:43:03
 -->
 <template>
   <n-config-provider :theme="theme">
@@ -14,7 +14,7 @@
 
 <script setup>
 import UploadData from './pages/UploadData.vue'
-import { darkTheme, NConfigProvider, NMessageProvider } from 'naive-ui'
+import { darkTheme, NConfigProvider, NMessageProvider, NButton } from 'naive-ui'
 import { ref } from 'vue'
 
 const theme = ref('null')
