@@ -1,19 +1,21 @@
 <!--
  * @Author: Youzege
  * @Date: 2022-10-06 20:39:53
- * @LastEditors: luoyz
- * @LastEditTime: 2022-10-09 10:43:03
+ * @LastEditors: Youzege
+ * @LastEditTime: 2022-10-18 10:45:01
 -->
 <template>
   <n-config-provider :theme="theme">
     <n-message-provider>
-      <UploadData />
+      <!-- <UploadData /> -->
+      <DownloadData />
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup>
 import UploadData from './pages/UploadData.vue'
+import DownloadData from './pages/DownloadData.vue'
 import { darkTheme, NConfigProvider, NMessageProvider, NButton } from 'naive-ui'
 import { ref } from 'vue'
 

@@ -1,8 +1,8 @@
 <!--
  * @Author: Youzege
  * @Date: 2022-10-06 23:10:34
- * @LastEditors: luoyz
- * @LastEditTime: 2022-10-09 17:03:21
+ * @LastEditors: Youzege
+ * @LastEditTime: 2022-10-18 15:52:43
 -->
 <template>
   <n-layout>
@@ -383,7 +383,7 @@ const chunkUpload = async ({ url, method, data, percent, source }) => {
     onUploadProgress: createProgress(percent), // 传入监听上传进度回调
     cancelToken: source.token
   })
-  return res
+  return res.data
 }
 
 /**
