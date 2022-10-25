@@ -2,7 +2,7 @@
  * @Author: Youzege
  * @Date: 2022-10-18 10:39:37
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-25 11:05:17
+ * @LastEditTime: 2022-10-25 16:26:56
 -->
 <template>
   <n-layout>
@@ -13,10 +13,16 @@
     </n-layout-header>
 
     <n-layout-content content-style="padding: 24px;">
-      <n-input v-model:value="downloadUrl" type="text" placeholder="下载url" />
-      <n-button @click="downloadFile">
-        下载
-      </n-button>
+      <div class="download-box">
+        <n-input
+          v-model:value="downloadUrl"
+          type="text"
+          placeholder="下载url"
+        />
+        <n-button class="download-box__btn" @click="downloadFile">
+          👉下载
+        </n-button>
+      </div>
     </n-layout-content>
   </n-layout>
 </template>
@@ -75,9 +81,7 @@ const blobToFile = (blob, filename) => {
 /**
  * 下载url
  */
-const downloadUrl = ref(
-  '/qjtp.jpg'
-)
+const downloadUrl = ref('/qjtp.jpg')
 
 /**
  * 分块大小
@@ -105,7 +109,7 @@ const errRetry = 3
 const getContentLength = async url => {
   const res = await request({
     url: downloadUrl.value,
-    method: 'GET'
+    method: 'HEAD'
   })
   return res.headers['content-length']
 }
@@ -140,16 +144,17 @@ const getBinaryContent = async (start, end) => {
 /**
  * 文件合并
  */
-const concatenate = (arrays) => {
-  if (!arrays.length) return null;
-  let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-  let result = new Uint8Array(totalLength);
-  let length = 0;
+const concatenate = arrays => {
+  if (!arrays.length) return null
+  let totalLength = arrays.reduce((acc, value) => acc + value.length, 0)
+  let result = new Uint8Array(totalLength)
+  let length = 0
   for (let array of arrays) {
-    result.set(array, length);
-    length += array.length;
+    result.set(array, length)
+    length += array.length
   }
-  return result;
+  console.log(result)
+  return result
 }
 
 /**
@@ -174,17 +179,25 @@ const downloadFile = async () => {
       return getBinaryContent(start, end, i)
     }
   )
-  const sortedBuffers = res
-    .map((item) => new Uint8Array(item.buffer));
+
+  const sortedBuffers = res.map(item => new Uint8Array(item.buffer))
   const concatenateData = concatenate(sortedBuffers)
-  fileSave({name: 'qjtp.jpg', sortedBuffers: concatenateData, mime: "image/jpeg" })
+  fileSave({
+    name: 'qjtp.jpg',
+    sortedBuffers: concatenateData,
+    mime: 'image/jpeg'
+  })
 }
 
 /**
  * 文件保存
  */
-const fileSave = ({ name, sortedBuffers,  mime = "application/octet-stream" }) => {
-  const blob = new Blob([sortedBuffers], { type: mime });
+const fileSave = ({
+  name,
+  sortedBuffers,
+  mime = 'application/octet-stream'
+}) => {
+  const blob = new Blob([sortedBuffers], { type: mime })
   // 使用 saveAs
   saveAs(blob, name)
 }
@@ -211,5 +224,16 @@ const fileSave = ({ name, sortedBuffers,  mime = "application/octet-stream" }) =
 
 .n-gradient-text {
   font-size: 1.4rem;
+}
+
+.download-box {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+
+  &__btn{
+    margin-top: 10px;
+  }
 }
 </style>
