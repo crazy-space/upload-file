@@ -2,7 +2,7 @@
  * @Author: Youzege
  * @Date: 2022-10-18 10:39:37
  * @LastEditors: Youzege
- * @LastEditTime: 2022-10-25 10:45:11
+ * @LastEditTime: 2022-10-25 11:05:17
 -->
 <template>
   <n-layout>
@@ -76,7 +76,7 @@ const blobToFile = (blob, filename) => {
  * 下载url
  */
 const downloadUrl = ref(
-  '/range/qjtp.jpg'
+  '/qjtp.jpg'
 )
 
 /**
